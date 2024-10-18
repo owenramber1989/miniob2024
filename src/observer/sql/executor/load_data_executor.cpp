@@ -16,6 +16,7 @@ See the Mulan PSL v2 for more details. */
 #include "common/lang/string.h"
 #include "event/session_event.h"
 #include "event/sql_event.h"
+#include "event/sql_debug.h"
 #include "sql/executor/sql_result.h"
 #include "sql/stmt/load_data_stmt.h"
 
@@ -61,6 +62,7 @@ RC insert_record_from_file(
     if (field->type() != AttrType::CHARS) {
       common::strip(file_value);
     }
+		sql_debug("the file value is %s", file_value.c_str());
     rc = DataType::type_instance(field->type())->set_value_from_str(record_values[i], file_value);
   }
 
