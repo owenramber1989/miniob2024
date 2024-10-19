@@ -22,6 +22,7 @@ int DateType::compare(const Value &left, const Value &right) const
 {
   ASSERT(left.attr_type() == AttrType::DATES, "left type is not date");
   ASSERT(right.attr_type() == AttrType::DATES, "right type is not date");
+	LOG_INFO("datetype::compare:: left is %d while right is %d",left.get_int(),right.get_int());
     return common::compare_int((void *)&left.value_.int_value_, (void *)&right.value_.int_value_);
 }
 
@@ -113,7 +114,7 @@ RC DateType::cast_to(const Value &val, AttrType type, Value &result) const
   switch (type) {
 		case AttrType::CHARS: {
 														DataType::type_instance(AttrType::CHARS)->set_value_from_str(result,val.get_string());
-
+    LOG_INFO("date value %d turned into char value %s",val.get_int(),result.get_string().c_str());
 													} break;
     default: return RC::UNIMPLEMENTED;
   }
@@ -122,8 +123,11 @@ RC DateType::cast_to(const Value &val, AttrType type, Value &result) const
 
 int DateType::cast_cost(AttrType type)
 {
-  if (type == AttrType::CHARS || type==AttrType::DATES) {
+  if (type==AttrType::DATES) {
     return 0;
   }
+	if(type == AttrType::CHARS) {
+		return 3; // 避免2003-1-09和2003-01-08比较的问题
+	}
   return INT32_MAX;
 }
