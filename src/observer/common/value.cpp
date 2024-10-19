@@ -13,7 +13,7 @@ See the Mulan PSL v2 for more details. */
 //
 
 #include "common/value.h"
-
+#include "common/char.h"
 #include "common/lang/comparator.h"
 #include "common/lang/exception.h"
 #include "common/lang/sstream.h"
@@ -130,7 +130,47 @@ void Value::set_data(char *data, int length)
     } break;
   }
 }
+bool Value::like(const Value& other) const
+{
+  if(this->attr_type_!=AttrType::CHARS||other.attr_type_!=AttrType::CHARS) {
+    LOG_WARN("LIKE only support chars!");
+    return false;
+  }
+  const char *str1 = this->data();
+  // int len1 = this->length_;
+  int len1 = strlen(str1);
+  const char *str2 = other.data();
+  // int len2 = other.length_;
+  int len2 = strlen(str2);
+  // '%'用于匹配零个到多个任意字符（英文单引号“'”除外），'_'用于匹配一个任意字符（英文单引号“'”除外）。
+  
+  bool dp[len1+1][len2+1];
+  memset(dp, 0, sizeof(dp));
+  dp[0][0] = true;
+  if(len2>0 && str2[0]=='%'){
+    for(int i=0; i<=len1; ++i){
+        dp[i][1] = true;
+    }
+  }
+  for(int i=1; i<=len1; ++i){
+    for(int j=1; j<=len2; ++j){
+      if(str2[j-1]=='%'){
+        dp[i][j] = (dp[i][j-1] || dp[i-1][j] || dp[i-1][j-1]);
+      }
+      else if(str2[j-1]=='_' || str2[j-1]==str1[i-1]){
+        dp[i][j] = dp[i-1][j-1];
+      }
+      else if(isLetter(str2[j-1]) && isLetter(str1[i-1])){ // 不区分大小写
+        if((isLowercaseLetter(str2[j-1]) && isUppercaseLetter(str1[i-1]) && toUppercaseLetter(str2[j-1])==str1[i-1])
+        || (isUppercaseLetter(str2[j-1]) && isLowercaseLetter(str1[i-1]) && toLowercaseLetter(str2[j-1])==str1[i-1])){
+          dp[i][j] = dp[i-1][j-1];
+        }
+      }
+    }
+  }
 
+  return dp[len1][len2];
+}
 void Value::set_int(int val)
 {
   reset();

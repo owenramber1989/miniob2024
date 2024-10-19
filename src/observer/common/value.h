@@ -91,6 +91,8 @@ public:
   void set_data(const char *data, int length) { this->set_data(const_cast<char *>(data), length); }
   void set_value(const Value &value);
   void set_boolean(bool val);
+	bool like(const Value &value) const;
+
 
   string to_string() const;
 
