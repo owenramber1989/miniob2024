@@ -25,6 +25,9 @@ See the Mulan PSL v2 for more details. */
 #include "storage/buffer/disk_buffer_pool.h"
 #include "storage/common/condition_filter.h"
 #include "storage/common/meta_util.h"
+#include "storage/field/field_meta.h"
+#include "storage/index/index_meta.h"
+#include "storage/record/record.h"
 #include "storage/index/bplus_tree_index.h"
 #include "storage/index/index.h"
 #include "storage/record/record_manager.h"
@@ -51,7 +54,48 @@ Table::~Table()
 
   LOG_INFO("Table has been closed: %s", name());
 }
-
+// 获取更新后的record
+RC Table::get_new_record(const RID &rid, Value &value, const char *field_name, Record &new_record)
+{
+  RC rc = get_record(rid, new_record);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to get record.table name=%s,rid=%s,rc=%s",name(),rid.to_string().c_str(),strrc(rc));
+    return RC::RECORD_NOT_EXIST;
+  }
+  // 更新为新的记录
+  const FieldMeta *field = table_meta_.field(field_name);
+  if (field == nullptr) {
+    return RC::INVALID_ARGUMENT;
+  }
+  char  *record_data = new_record.data();
+  size_t copy_len    = field->len();
+  if (field->type() == AttrType::CHARS) {
+    const size_t data_len = value.length();
+    if (copy_len > data_len) {
+      copy_len = data_len + 1;
+    }
+  }
+  memcpy(record_data + field->offset(), value.data(), copy_len);
+  return rc;
+}
+RC Table::update_record(Record &record, Value &value, const char *field_name)
+{
+  Record new_record;
+  RC     rc          = get_new_record(record.rid(), value, field_name, new_record);
+  // char  *record_data = new_record.data();
+  // 检查索引唯一性
+  // B+树没有提供获取Get函数,只能尝试执行,错误了就回滚
+  // 不额外实现更新功能,先删除后插入
+  rc = delete_record(record);
+  if (rc != RC::SUCCESS) {
+    return rc;
+  }
+  rc = insert_record(new_record);
+  if (rc != RC::SUCCESS) {
+    insert_record(record);
+  }
+	return rc;
+}
 RC Table::create(Db *db, int32_t table_id, const char *path, const char *name, const char *base_dir,
     span<const AttrInfoSqlNode> attributes, StorageFormat storage_format)
 {

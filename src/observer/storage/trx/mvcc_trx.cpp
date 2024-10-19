@@ -11,12 +11,15 @@ See the Mulan PSL v2 for more details. */
 //
 // Created by Wangyunlai on 2023/04/24.
 //
-
+#include "common/log/log.h"
+#include "common/rc.h"
+#include "storage/record/record.h"
 #include "storage/trx/mvcc_trx.h"
 #include "storage/db/db.h"
 #include "storage/field/field.h"
 #include "storage/trx/mvcc_trx_log.h"
 #include "common/lang/algorithm.h"
+#include "storage/trx/trx.h"
 
 MvccTrxKit::~MvccTrxKit()
 {
@@ -147,7 +150,20 @@ RC MvccTrx::insert_record(Table *table, Record &record)
   operations_.push_back(Operation(Operation::Type::INSERT, table, record.rid()));
   return rc;
 }
-
+RC MvccTrx::update_record(Table *table, Record &record, Value &value, const char *field_name)
+{
+  Record new_record;
+  RC     rc = table->get_new_record(record.rid(), value, field_name, new_record);
+  if (rc != RC::SUCCESS) {
+    LOG_WARN("failed to get new update record.trx id=%d, table id=%d, rid=%s, rc=%s",trx_id_,table->table_id(),record.rid().to_string().c_str(),strrc(rc));
+    return rc;
+  }
+  rc = delete_record(table, record);
+  if (rc == RC::SUCCESS) {
+    rc = insert_record(table, new_record);
+  }
+  return rc;
+}
 RC MvccTrx::delete_record(Table *table, Record &record)
 {
   Field begin_field;

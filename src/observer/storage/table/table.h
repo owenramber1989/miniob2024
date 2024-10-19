@@ -17,6 +17,7 @@ See the Mulan PSL v2 for more details. */
 #include "storage/table/table_meta.h"
 #include "common/types.h"
 #include "common/lang/span.h"
+#include "common/value.h"
 #include "common/lang/functional.h"
 
 struct RID;
@@ -53,7 +54,8 @@ public:
    */
   RC create(Db *db, int32_t table_id, const char *path, const char *name, const char *base_dir,
       span<const AttrInfoSqlNode> attributes, StorageFormat storage_format);
-
+RC update_record(Record &record, Value &value, const char *field_name);
+  RC get_new_record(const RID &rid, Value &value, const char *field_name, Record &new_record);
 	/**
    * 删除一个表
    * @param dir 表所在的文件夹，表记录数据文件、索引数据文件存放位置

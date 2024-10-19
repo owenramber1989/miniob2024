@@ -18,6 +18,8 @@ See the Mulan PSL v2 for more details. */
 #include <utility>
 
 #include "common/rc.h"
+#include "common/value.h"
+#include "storage/record/record.h"
 #include "common/lang/mutex.h"
 #include "sql/parser/parse.h"
 #include "storage/field/field_meta.h"
@@ -146,7 +148,7 @@ public:
   virtual RC insert_record(Table *table, Record &record)                    = 0;
   virtual RC delete_record(Table *table, Record &record)                    = 0;
   virtual RC visit_record(Table *table, Record &record, ReadWriteMode mode) = 0;
-
+virtual RC update_record(Table *table, Record &record, Value &value, const char *field_name) = 0;
   virtual RC start_if_need() = 0;
   virtual RC commit()        = 0;
   virtual RC rollback()      = 0;
