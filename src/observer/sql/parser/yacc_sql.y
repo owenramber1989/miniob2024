@@ -90,6 +90,7 @@ UnboundAggregateExpr *create_aggregate_expression(const char *aggregate_name,
         INT_T
         STRING_T
         FLOAT_T
+				TEXT_T
         VECTOR_T
         HELP
         EXIT
@@ -345,7 +346,8 @@ attr_def:
       $$ = new AttrInfoSqlNode;
       $$->type = (AttrType)$2;
       $$->name = $1;
-      $$->length = $4;
+			if($2==TEXT_T) $$->length=65535;
+      else $$->length = 4;
       free($1);
     }
     | ID type
@@ -366,6 +368,7 @@ type:
     | FLOAT_T  { $$ = static_cast<int>(AttrType::FLOATS); }
     | VECTOR_T { $$ = static_cast<int>(AttrType::VECTORS); }
 		| DATE_T   { $$ = static_cast<int>(AttrType::DATES);}
+		| TEXT_T   { $$ = static_cast<int>(AttrType::TEXTS);}
     ;
 insert_stmt:        /*insert   语句的语法解析树*/
     INSERT INTO ID VALUES LBRACE value value_list RBRACE 

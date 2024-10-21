@@ -36,6 +36,7 @@ public:
   friend class CharType;
   friend class VectorType;
 	friend class DateType;
+	friend class TextType;
 
   Value() = default;
 
